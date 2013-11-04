@@ -27,4 +27,24 @@
 			<version>1.4</version>
 		</dependency>
 	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.1</version>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<configuration>
+					<mainClass>info.nuvasuparati.xls2csv.xls2csv.Xls2csv</mainClass>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 </project>
