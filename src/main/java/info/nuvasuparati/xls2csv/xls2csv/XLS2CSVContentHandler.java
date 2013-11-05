@@ -20,6 +20,7 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 			"tr", "td", "div", "h1"));
 
 	private String currentSheetId;
+	private String currentSheetName;
 	private boolean insideTable = false;
 	private List<String> currentRow = new ArrayList<String>();
 
@@ -27,16 +28,16 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 	public void startElement(String uri, String localName, String name,
 			Attributes atts) throws SAXException {
 		tagStack.push(name);
-		if (isInteresting(name)) {
-			// System.out.println(tagStack.toString() + ">>>" + name);
-			if (atts instanceof AttributesImpl) {
-				AttributesImpl attributesImpl = (AttributesImpl) atts;
-				for (int i = 0; i < attributesImpl.getLength(); i++) {
-					System.out.println("attributesValue="
-							+ attributesImpl.getValue(i));
-				}
-			}
-		}
+		// if (isInteresting(name)) {
+		// // System.out.println(tagStack.toString() + ">>>" + name);
+		// if (atts instanceof AttributesImpl) {
+		// AttributesImpl attributesImpl = (AttributesImpl) atts;
+		// for (int i = 0; i < attributesImpl.getLength(); i++) {
+		// System.out.println("attributesValue="
+		// + attributesImpl.getValue(i));
+		// }
+		// }
+		// }
 		super.startElement(uri, localName, name, atts);
 	}
 
@@ -44,11 +45,20 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 			throws SAXException {
 		String str = new String(chars).trim();
 		if (isInteresting(getLastTag())) {
-			currentSheetId = str;
-			if (getLastTag().equals("h1")) {
-				System.out.println("------------------------------");
-				System.out.println(currentSheetId);
-				System.out.println("------------------------------");
+			if (!str.trim().equals("")
+					&& "[html, body, div, table, tbody, tr, td]"
+							.equals(tagStack.toString())) {
+				if (currentSheetId != null && currentSheetName == null) {
+					currentSheetName = str;
+					System.out.println("------------------------------");
+					System.out.println(currentSheetId + " - "
+							+ currentSheetName);
+					System.out.println("------------------------------");
+				}
+			}
+			if (getLastTag().equals("h1") && str!=null && !str.trim().equals("")) {
+				currentSheetId = str;
+				currentSheetName = null;
 			} else if (isStartOfTableHeader(str)) {
 				insideTable = true;
 			} else {
@@ -70,7 +80,7 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 			// System.out.println(tagStack.toString() + "<<<" + name);
 		}
 		if (name.equals("tr") && insideTable && currentRow.size() > 0) {
-			if(currentRow.get(0).equals("Capitol")){
+			if (currentRow.get(0).equals("Capitol")) {
 				System.out.println();
 			}
 			System.out.println(currentRow);
