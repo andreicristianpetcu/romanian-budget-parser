@@ -56,7 +56,6 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 	private void exitTableIfNecessary(String name) {
 		if (name.equals("tbody")) {
 			insideTable = false;
-			currentSheetName = null;
 		}
 	}
 
@@ -68,7 +67,7 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 	private boolean isNonEmptyRowEnd(String name) {
 		return insideTable && name.equals("tr") && currentRow.size() > 0;
 	}
-	
+
 	private void addToCurrentRowIfInsideTable(String str) {
 		if (insideTable) {
 			currentRow.add(str);
@@ -89,19 +88,27 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 	}
 
 	private void computeCurrentSheetNameIfMissing(String str) {
+		if ("Bugetul pe anul 2013".equals(str.trim())) {
+			currentSheetId = null;
+			currentSheetName = null;
+		}
 		if (!str.trim().equals("")
 				&& "[html, body, div, table, tbody, tr, td]".equals(tagStack
 						.toString())) {
-			if (currentSheetId != null && currentSheetName == null) {
-				currentSheetName += str;
+			if (currentSheetId != null && currentSheetName != null) {
+				currentSheetName += !currentSheetName.equals("") ? " " : ""
+						+ str;
 				System.out.println();
 				System.out.println("------------------------------");
-				System.out.println(currentSheetId + " - " + currentSheetName);
+				System.out.println(getFullSheetName());
 				System.out.println("------------------------------");
 			}
 		}
 	}
 
+	private String getFullSheetName() {
+		return currentSheetId + "_" + currentSheetName;
+	}
 
 	private boolean isSheet(String name, Attributes atts) {
 		if (atts != null && "div".equals(name)) {
