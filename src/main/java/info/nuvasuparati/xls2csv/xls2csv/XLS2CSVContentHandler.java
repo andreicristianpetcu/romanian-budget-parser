@@ -10,7 +10,6 @@ import java.util.TreeSet;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
 
 public class XLS2CSVContentHandler extends BodyContentHandler {
 
@@ -48,7 +47,6 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 			throws SAXException {
 		tagStack.pop();
 		if (isNonEmptyRowEnd(name)) {
-			printEmptyRowEndedRowIsHeader();
 			printEndedRowAndReset();
 		}
 		exitTableIfNecessary(name);
@@ -64,16 +62,6 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 	private void printEndedRowAndReset() {
 		System.out.println(currentRow.size() + " >> " + currentRow);
 		currentRow.clear();
-	}
-
-	private void printEmptyRowEndedRowIsHeader() {
-		if (isNewHeader()) {
-			System.out.println();
-		}
-	}
-
-	private boolean isNewHeader() {
-		return currentRow.get(0).equals("Capitol");
 	}
 
 	private boolean isNonEmptyRowEnd(String name) {
@@ -105,6 +93,7 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 						.toString())) {
 			if (currentSheetId != null && currentSheetName == null) {
 				currentSheetName = str;
+				System.out.println();
 				System.out.println("------------------------------");
 				System.out.println(currentSheetId + " - " + currentSheetName);
 				System.out.println("------------------------------");
