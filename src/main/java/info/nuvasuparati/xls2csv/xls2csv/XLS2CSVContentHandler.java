@@ -56,6 +56,7 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 	private void exitTableIfNecessary(String name) {
 		if (name.equals("tbody")) {
 			insideTable = false;
+			currentSheetName = null;
 		}
 	}
 
@@ -83,7 +84,7 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 	private void computeCurrentSheetIdIfMissing(String str) {
 		if (getLastTag().equals("h1") && str != null && !str.trim().equals("")) {
 			currentSheetId = str;
-			currentSheetName = null;
+			currentSheetName = "";
 		}
 	}
 
@@ -92,7 +93,7 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 				&& "[html, body, div, table, tbody, tr, td]".equals(tagStack
 						.toString())) {
 			if (currentSheetId != null && currentSheetName == null) {
-				currentSheetName = str;
+				currentSheetName += str;
 				System.out.println();
 				System.out.println("------------------------------");
 				System.out.println(currentSheetId + " - " + currentSheetName);
