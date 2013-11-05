@@ -1,5 +1,8 @@
 package info.nuvasuparati.xls2csv.xls2csv;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -10,6 +13,8 @@ import java.util.TreeSet;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
+
+import au.com.bytecode.opencsv.CSVWriter;
 
 public class XLS2CSVContentHandler extends BodyContentHandler {
 
@@ -23,6 +28,10 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 	private boolean insideTable = false;
 	private List<String> currentRow = new ArrayList<String>();
 	private boolean tdWithNoText;
+
+	private File currentCSVFile;
+
+	private CSVWriter csvWriter;
 
 	@Override
 	public void startElement(String uri, String localName, String tagName,
@@ -42,18 +51,14 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 
 			computeInsideTableIfMissing(str);
 
-			clearRowIfStartOfTableHeader(str);
+			if (isStartOfTableHeader(str)) {
+				currentRow.clear();
+			}
 
 			addToCurrentRowIfInsideTable(str);
 			markIfTdHasText(lastTag);
 		}
 		super.characters(chars, start, length);
-	}
-
-	private void clearRowIfStartOfTableHeader(String str) {
-		if (isStartOfTableHeader(str)) {
-			currentRow.clear();
-		}
 	}
 
 	@Override
@@ -90,6 +95,30 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 	private void exitTableIfNecessary(String name) {
 		if (name.equals("tbody")) {
 			insideTable = false;
+			finishWriteCsv();
+		}
+	}
+
+	private void startWritingCsvFile() {
+		currentCSVFile = new File(getFullSheetName() + ".csv");
+		System.out.println(">>" + currentCSVFile.getAbsolutePath());
+		try {
+			FileWriter fileWriter = new FileWriter(currentCSVFile);
+			csvWriter = new CSVWriter(fileWriter, '\t');
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void finishWriteCsv() {
+		try {
+			System.out.println("<<" + currentCSVFile.getAbsolutePath());
+
+//			String[] entries = "first#second#third".split("#");
+//			writer.writeNext(entries);
+//			writer.close();
+		} catch (Exception e) {
+			throw new RuntimeException();
 		}
 	}
 
@@ -127,7 +156,7 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 			System.out.println("------------------------------");
 			System.out.println(getFullSheetName());
 			System.out.println("------------------------------");
-
+			startWritingCsvFile();
 			currentSheetId = null;
 			currentSheetName = null;
 		}
@@ -142,7 +171,8 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 	}
 
 	private String getFullSheetName() {
-		return (currentSheetId + "_" + currentSheetName).replace("-", "_").replace(" ", "_").replace("___", "_").replace("__", "_");
+		return (currentSheetId + "_" + currentSheetName).replace("-", "_")
+				.replace(" ", "_").replace("___", "_").replace("__", "_");
 	}
 
 	private boolean isSheet(String name, Attributes atts) {
