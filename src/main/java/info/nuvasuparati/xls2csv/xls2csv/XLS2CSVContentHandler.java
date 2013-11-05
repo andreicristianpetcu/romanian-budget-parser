@@ -1,6 +1,8 @@
 package info.nuvasuparati.xls2csv.xls2csv;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TreeSet;
@@ -16,16 +18,17 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 
 	private Set<String> interestingTags = new TreeSet<String>(Arrays.asList(
 			"tr", "td", "div", "h1"));
-	
+
+	private String currentSheetId;
+	private boolean insideTable = false;
+	private List<String> currentRow = new ArrayList<String>();
+
 	@Override
 	public void startElement(String uri, String localName, String name,
 			Attributes atts) throws SAXException {
 		tagStack.push(name);
 		if (isInteresting(name)) {
-			if(isSheet(name, atts)){
-				
-			}
-			System.out.println(tagStack.toString() + ">>>" + name);
+			// System.out.println(tagStack.toString() + ">>>" + name);
 			if (atts instanceof AttributesImpl) {
 				AttributesImpl attributesImpl = (AttributesImpl) atts;
 				for (int i = 0; i < attributesImpl.getLength(); i++) {
@@ -37,23 +40,23 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 		super.startElement(uri, localName, name, atts);
 	}
 
-	private boolean isSheet(String name, Attributes atts) {
-		if(atts!=null && "div".equals(name) ){
-			return atts.getValue("class").equals("page");
-		}
-		return false;
-	}
-
 	public void characters(char[] chars, int start, int length)
 			throws SAXException {
+		String str = new String(chars).trim();
 		if (isInteresting(getLastTag())) {
-			if(getLastTag().equals("h1")){
+			currentSheetId = str;
+			if (getLastTag().equals("h1")) {
 				System.out.println("------------------------------");
-				System.out.println(new String(chars));
+				System.out.println(currentSheetId);
 				System.out.println("------------------------------");
+			} else if (isStartOfTableHeader(str)) {
+				insideTable = true;
 			} else {
-				System.out.println(tagStack.toString() + "\t\t\t"
-						+ new String(chars));
+				// System.out.println(tagStack.toString() + "\t\t\t"
+				// + currentSheetId);
+			}
+			if (insideTable) {
+				currentRow.add(str);
 			}
 		}
 		super.characters(chars, start, length);
@@ -64,9 +67,33 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 			throws SAXException {
 		tagStack.pop();
 		if (isInteresting(name)) {
-			System.out.println(tagStack.toString() + "<<<" + name);
+			// System.out.println(tagStack.toString() + "<<<" + name);
+		}
+		if (name.equals("tr") && insideTable && currentRow.size() > 0) {
+			if(currentRow.get(0).equals("Capitol")){
+				System.out.println();
+			}
+			System.out.println(currentRow);
+			currentRow.clear();
+		}
+		if (name.equals("tbody")) {
+			insideTable = false;
 		}
 		super.endElement(uri, localName, name);
+	}
+
+	private boolean isSheet(String name, Attributes atts) {
+		if (atts != null && "div".equals(name)) {
+			return atts.getValue("class").equals("page");
+		}
+		return false;
+	}
+
+	private boolean isStartOfTableHeader(String str) {
+		boolean isHeaderFirstColumn = str != null
+				&& str.trim().equals("Capitol");
+		boolean isTd = "td".equals(getLastTag());
+		return isHeaderFirstColumn && isTd;
 	}
 
 	private boolean isInteresting(String name) {
