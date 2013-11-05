@@ -2,7 +2,6 @@ package info.nuvasuparati.xls2csv.xls2csv;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -27,6 +26,8 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 	private String currentSheetName;
 	private boolean insideTable = false;
 	private List<String> currentRow = new ArrayList<String>();
+	private List<String> rowHeader = new ArrayList<String>();
+
 	private boolean tdWithNoText;
 
 	private File currentCSVFile;
@@ -112,19 +113,33 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 
 	private void finishWriteCsv() {
 		try {
-			System.out.println("<<" + currentCSVFile.getAbsolutePath());
-
-//			String[] entries = "first#second#third".split("#");
-//			writer.writeNext(entries);
-//			writer.close();
+			csvWriter.close();
 		} catch (Exception e) {
 			throw new RuntimeException();
 		}
 	}
 
 	private void printEndedRowAndReset() {
-		System.out.println(currentRow);
+		boolean currentRowHeader = isCurrentRowHeader();
+		if (currentRowHeader) {
+			rowHeader = new ArrayList<String>(currentRow);
+		}
+		ArrayList<String> rowToPrint = new ArrayList<String>();
+		for (int i = 0; i < rowHeader.size(); i++) {
+			if (!rowHeader.get(i).trim().equals("")) {
+				rowToPrint.add(currentRow.get(i));
+			}
+		}
+
+		System.out.println(rowToPrint);
+		csvWriter.writeNext(rowToPrint.toArray(new String[0]));
 		currentRow.clear();
+	}
+
+	private boolean isCurrentRowHeader() {
+		boolean currentRowHeader = currentRow.size() > 0
+				&& currentRow.get(0).trim().equals("Capitol");
+		return currentRowHeader;
 	}
 
 	private boolean isNonEmptyRowEnd(String name) {
