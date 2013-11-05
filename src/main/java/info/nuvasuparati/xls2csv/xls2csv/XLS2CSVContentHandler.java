@@ -22,35 +22,60 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 	private String currentSheetName;
 	private boolean insideTable = false;
 	private List<String> currentRow = new ArrayList<String>();
+	private boolean tdWithNoText;
 
 	@Override
-	public void startElement(String uri, String localName, String name,
+	public void startElement(String uri, String localName, String tagName,
 			Attributes atts) throws SAXException {
-		tagStack.push(name);
-		super.startElement(uri, localName, name, atts);
+		tagStack.push(tagName);
+		resetTdWithNoTextFlag(tagName);
+		super.startElement(uri, localName, tagName, atts);
 	}
 
 	public void characters(char[] chars, int start, int length)
 			throws SAXException {
 		String str = new String(chars).trim();
-		if (isInteresting(getLastTag())) {
+		String lastTag = getLastTag();
+		if (isInteresting(lastTag)) {
 			computeCurrentSheetNameIfMissing(str);
 			computeCurrentSheetIdIfMissing(str);
 			computeInsideTableIfMissing(str);
 			addToCurrentRowIfInsideTable(str);
+			markIfTdHasText(lastTag);
 		}
 		super.characters(chars, start, length);
 	}
 
+
 	@Override
 	public void endElement(String uri, String localName, String name)
 			throws SAXException {
-		tagStack.pop();
+		String currentTag = tagStack.pop();
+		addEmptyColumnIfNeeded(currentTag);
 		if (isNonEmptyRowEnd(name)) {
 			printEndedRowAndReset();
 		}
 		exitTableIfNecessary(name);
+		
 		super.endElement(uri, localName, name);
+	}
+
+	private void addEmptyColumnIfNeeded(String currentTag) {
+		if("td".equals(currentTag) && tdWithNoText){
+			currentRow.add("");
+		}
+	}
+
+	private void resetTdWithNoTextFlag(String tagName) {
+		if("td".equals(tagName)){
+			tdWithNoText = true;
+		}
+	}
+	
+	private void markIfTdHasText(String lastTag) {
+		if ("td".equals(lastTag)) {
+			tdWithNoText = false;
+		}
 	}
 
 	private void exitTableIfNecessary(String name) {
