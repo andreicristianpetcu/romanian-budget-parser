@@ -39,11 +39,21 @@ public class XLS2CSVContentHandler extends BodyContentHandler {
 		if (isInteresting(lastTag)) {
 			computeCurrentSheetNameIfMissing(str);
 			computeCurrentSheetIdIfMissing(str);
+			
 			computeInsideTableIfMissing(str);
+			
+			clearRowIfStartOfTableHeader(str);
+			
 			addToCurrentRowIfInsideTable(str);
 			markIfTdHasText(lastTag);
 		}
 		super.characters(chars, start, length);
+	}
+
+	private void clearRowIfStartOfTableHeader(String str) {
+		if(isStartOfTableHeader(str)){
+			currentRow.clear();
+		}
 	}
 
 
